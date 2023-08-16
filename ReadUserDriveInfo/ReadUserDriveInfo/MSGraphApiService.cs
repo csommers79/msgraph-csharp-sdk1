@@ -40,7 +40,7 @@ namespace DomainObjects.Services
             return _instance;
         }
 
-        public async Task UploadFiles()
+        public async Task ReadOneDrive()
         {
             try
             {

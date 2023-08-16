@@ -1,17 +1,4 @@
-﻿using Microsoft.Graph;
-using Microsoft.Identity.Client;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Text.Json;
-using System.Collections;
-using System.ComponentModel;
+﻿using Microsoft.Extensions.Configuration;
 using DomainObjects.Models;
 using DomainObjects.Services;
 using DomainObjects.Logging;
@@ -22,8 +9,7 @@ namespace ReadUserDriveInfo
     {       
 
         static async Task Main(string[] args)
-        {
-            //Console.WriteLine("Hello, World!");
+        {            
             FileLogger logger = null;
             try
             {

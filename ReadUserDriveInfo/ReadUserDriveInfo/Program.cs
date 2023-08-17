@@ -9,8 +9,7 @@ namespace ReadUserDriveInfo
     {       
 
         static async Task Main(string[] args)
-        {            
-            FileLogger logger = null;
+        {                        
             try
             {
 
@@ -24,21 +23,19 @@ namespace ReadUserDriveInfo
                 var TenantId = config["TenantId"];
                 var AppSecret = config["AppSecret"];                
                 var EmailAddresses = config["EmailAddresses"];
-                var LocalTargetFolder = config["LocalTargetFolder"];
                 AppConfig configData = new AppConfig
                 {
                     AppId = AppId,
                     AppSecret = AppSecret,
                     TenantId = TenantId,                  
-                    EmailAddress = EmailAddresses,
-                    LocalTargetFolder = LocalTargetFolder
+                    EmailAddress = EmailAddresses
 
                 };
-                await MSGraphApiService.GetInstance(configData, logger).ReadOneDrive();
+                await MSGraphApiService.GetInstance(configData).ReadOneDrive();
             }
             catch (Exception ex)
             {
-                logger.Error(Newtonsoft.Json.JsonConvert.SerializeObject(ex));
+                Console.WriteLine(ex);                
             }
         }
     }

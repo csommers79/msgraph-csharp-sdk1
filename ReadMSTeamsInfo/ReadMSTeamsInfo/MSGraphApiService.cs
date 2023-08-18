@@ -1,6 +1,7 @@
 ﻿using DomainObjects.Models;
 using Microsoft.Graph;
 using System.Net.Http.Headers;
+using System.Threading.Channels;
 
 namespace DomainObjects.Services
 {
@@ -31,7 +32,7 @@ namespace DomainObjects.Services
             return _instance;
         }
 
-        public async Task ReadTeamChannels()
+        public async Task ReadTeamInfo()
         {
             try
             {
@@ -96,6 +97,18 @@ namespace DomainObjects.Services
                     members = await members.NextPageRequest.GetAsync();
                     PrintChannelMembers(members);
                 }
+                if (channel.DisplayName == _appConfig.ChannelName) // read the messages for specified channel
+                {
+
+                    var messages = await graphServiceClient?.Teams[teamId]?.Channels[channel.Id]?.Messages?.Request().GetAsync();
+                    await PrintChannelMessages(messages, teamId, channel.Id);
+                    while (messages.NextPageRequest != null)
+                    {
+                        messages = await messages.NextPageRequest.GetAsync();
+                        await PrintChannelMessages(messages, teamId, channel.Id);
+                    }
+
+                }
             }            
         }
 
@@ -104,6 +117,34 @@ namespace DomainObjects.Services
             foreach (var member in members)
             {
                 Console.WriteLine(string.Format("       Member display name = {0}", member.DisplayName));               
+            }
+        }
+        private async Task PrintChannelMessages(IChannelMessagesCollectionPage messages, string teamId, string channelId)
+        {
+            foreach (var msg in messages)
+            {
+                Console.WriteLine(string.Format("       Message = {0}, From= {1}", msg.Body?.Content, msg.From.User.DisplayName));
+                var replies = await graphServiceClient?.Teams[teamId].Channels[channelId].Messages[msg.Id].Replies.Request().GetAsync();
+                await PrintMessageReplies(replies, teamId, channelId);
+                while (replies.NextPageRequest != null)
+                {
+                    replies = await replies.NextPageRequest.GetAsync();
+                    await PrintMessageReplies(replies, teamId, channelId);
+                }
+            }
+        }
+        private async Task PrintMessageReplies(IChatMessageRepliesCollectionPage messages, string teamId, string channelId)
+        {
+            foreach (var msg in messages)
+            {
+                Console.WriteLine(string.Format("       Message = {0}, From= {1}", msg.Body?.Content, msg.From.User.DisplayName));
+                var replies = await graphServiceClient?.Teams[teamId].Channels[channelId].Messages[msg.Id].Replies.Request().GetAsync();
+                await PrintMessageReplies(replies, teamId, channelId);
+                while (replies.NextPageRequest != null)
+                {
+                    replies = await replies.NextPageRequest.GetAsync();
+                    await PrintMessageReplies(replies, teamId, channelId);
+                }
             }
         }
         private GraphServiceClient GetGraphClient()

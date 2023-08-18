@@ -20,14 +20,16 @@ namespace ReadMSTeamsInfo
                 var AppId = config["AppId"];
                 var TenantId = config["TenantId"];
                 var AppSecret = config["AppSecret"];
+                var ChannelName = config["ChannelName"];
                 AppConfig configData = new AppConfig
                 {
                     AppId = AppId,
                     AppSecret = AppSecret,
-                    TenantId = TenantId,                    
+                    TenantId = TenantId,  
+                    ChannelName = ChannelName
 
                 };
-                await MSGraphApiService.GetInstance(configData).ReadTeamChannels();
+                await MSGraphApiService.GetInstance(configData).ReadTeamInfo();
             }
             catch (Exception ex)
             {

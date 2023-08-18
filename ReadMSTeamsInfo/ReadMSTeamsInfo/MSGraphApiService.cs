@@ -6,16 +6,14 @@ namespace DomainObjects.Services
 {
     public class MSGraphApiService
     {
-        private static object _lock = new object();
+        private static readonly object _lock = new object();
         private static MSGraphApiService? _instance = null;
         private AppConfig _appConfig;
         static readonly HttpClient client = new HttpClient();
-        private string EmailAdress;
         private GraphServiceClient? graphServiceClient = null;
         private MSGraphApiService(AppConfig appConfig)
         {
             _appConfig = appConfig;            
-            EmailAdress = appConfig.EmailAddress.Trim();
         }
 
         public static MSGraphApiService GetInstance(AppConfig appConfig)
@@ -33,92 +31,79 @@ namespace DomainObjects.Services
             return _instance;
         }
 
-        public async Task ReadOneDrive()
+        public async Task ReadTeamChannels()
         {
             try
             {
                 this.graphServiceClient = GetGraphClient();
                 {
-                    var u = await graphServiceClient.Users[EmailAdress].Request().GetAsync();
-                    Dictionary<string, List<dynamic>> keyValuePairs = new Dictionary<string, List<dynamic>>();
-
+                                       
                     try
                     {
-                       var userDrives = await graphServiceClient.Users[u.Id].Drives
-                                               .Request()
-                                               .GetAsync();
+                        var allTeams = await graphServiceClient.Teams.Request().GetAsync();
 
-                        Console.WriteLine("** Available user drives **");
-                        await PrintUserDrives(userDrives, u.Id);
-                        while (userDrives.NextPageRequest != null)
+                        Console.WriteLine("** Available teams **");
+                        await PrintTeams(allTeams);
+                        while (allTeams.NextPageRequest != null)
                         {
-                            userDrives = await userDrives.NextPageRequest.GetAsync();
-                            await PrintUserDrives(userDrives, u.Id);
+                            allTeams = await allTeams.NextPageRequest.GetAsync();
+                           await PrintTeams(allTeams);
                         }   
                         
 
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         throw;
                     }
                 }
             }
 
-            catch (ServiceException ex)
+            catch (ServiceException)
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
         }
 
 
-       private async Task PrintUserDrives(IUserDrivesCollectionPage userDrives, string userId)
+       private async Task PrintTeams(IGraphServiceTeamsCollectionPage teamList)
         { 
-            foreach (var d in userDrives)
+            foreach(var team in teamList)
             {
-                Console.WriteLine(string.Format("Drive Name = {0}, Drive Id = {1}", d.Name, d.Id));
-                var rootFolders = await graphServiceClient.Users[userId].Drives[d.Id].Root.Children
-                                                .Request()
-                                                .GetAsync();
-               
-                Console.WriteLine("** Available folders **");
-                await PrintDriveItems(rootFolders, d.Id, userId);
-                while (rootFolders.NextPageRequest != null)
+                Console.WriteLine(string.Format("Team display name = {0}", team.DisplayName));
+                var channels = await graphServiceClient?.Teams[team.Id].Channels.Request().GetAsync();
+                await PrintTeamChannels(channels, team.Id);
+                while (channels.NextPageRequest != null)
                 {
-                    rootFolders = await rootFolders.NextPageRequest.GetAsync();
-                   await  PrintDriveItems(rootFolders, d.Id, userId);
+                    channels = await channels.NextPageRequest.GetAsync();
+                   await PrintTeamChannels(channels, team.Id);
                 }
-            }
+            }            
         }
-        private async Task PrintDriveItems(IDriveItemChildrenCollectionPage folders, string driveId, string userId)
+        private async Task PrintTeamChannels(ITeamChannelsCollectionPage channelList, string teamId)
         {
-            foreach (var f in folders)
+            foreach (var channel in channelList)
             {
-                if (f.Folder == null) continue;
-                Console.WriteLine(string.Format("Folder Name = {0}, Folder Id = {1}", f.Name, f.Id));
-                var rootFolders = await graphServiceClient.Users[userId].Drives[driveId].Items[f.Id].Children
-                                                .Request()
-                                                .GetAsync();                
-                Console.WriteLine("** Available files **");
-                PrintFiles(rootFolders);
-                while (rootFolders.NextPageRequest != null)
+                Console.WriteLine(string.Format("   Channel display name = {0}", channel.DisplayName));
+                var members = await graphServiceClient?.Teams[teamId]?.Channels[channel.Id]?.Members?.Request().GetAsync();
+                PrintChannelMembers(members);
+                while (members.NextPageRequest != null)
                 {
-                    rootFolders = await rootFolders.NextPageRequest.GetAsync();
-                    PrintFiles(rootFolders);
+                    members = await members.NextPageRequest.GetAsync();
+                    PrintChannelMembers(members);
                 }
-                Console.WriteLine("\r\n");
-            }
+            }            
         }
-        private void PrintFiles(IDriveItemChildrenCollectionPage folders)
+
+        private void PrintChannelMembers(IChannelMembersCollectionPage members)
         {
-            foreach (var f in folders)
+            foreach (var member in members)
             {
-                if (f.File == null) continue;
-                Console.WriteLine(string.Format("File Name = {0}, File Id = {1}, Size = {2}, CreatedDateTime = {3}", f.Name, f.Id, f.Size, f.CreatedDateTime));                
+                Console.WriteLine(string.Format("       Member display name = {0}", member.DisplayName));               
             }
         }
         private GraphServiceClient GetGraphClient()

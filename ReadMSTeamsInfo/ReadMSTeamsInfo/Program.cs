@@ -2,13 +2,12 @@
 using DomainObjects.Models;
 using DomainObjects.Services;
 
-namespace ReadUserDriveInfo
+namespace ReadMSTeamsInfo
 {
     internal class Program
-    {       
-
+    {
         static async Task Main(string[] args)
-        {                        
+        {
             try
             {
 
@@ -20,21 +19,19 @@ namespace ReadUserDriveInfo
                 // Get values from the config given their key and their target type.
                 var AppId = config["AppId"];
                 var TenantId = config["TenantId"];
-                var AppSecret = config["AppSecret"];                
-                var EmailAddresses = config["EmailAddresses"];
+                var AppSecret = config["AppSecret"];
                 AppConfig configData = new AppConfig
                 {
                     AppId = AppId,
                     AppSecret = AppSecret,
-                    TenantId = TenantId,                  
-                    EmailAddress = EmailAddresses
+                    TenantId = TenantId,                    
 
                 };
-                await MSGraphApiService.GetInstance(configData).ReadOneDrive();
+                await MSGraphApiService.GetInstance(configData).ReadTeamChannels();
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);                
+                Console.WriteLine(ex);
             }
         }
     }
